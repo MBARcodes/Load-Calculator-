@@ -25,6 +25,7 @@
         <option value="Refrigerator">Refrigerator</option>
         <option value="Washing Machine">Washing Machine</option>
         <option value="Electric Fan">Electric Fan</option>
+        <option value="Exhaust Fan">Exhaust Fan</option>
         <option value="Microwave Oven">Microwave Oven</option>
         <option value="Rice Cooker">Rice Cooker</option>
         <option value="Water Heater">Water Heater</option>
@@ -63,6 +64,7 @@
         <th>Ground Wire</th>
         <th>Conductor Type</th>
         <th>Conduit</th>
+        <th>Comment</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -76,6 +78,7 @@
       "Refrigerator": { multiplier: 1 },
       "Washing Machine": { multiplier: 1 },
       "Electric Fan": { multiplier: 1 },
+      "Exhaust Fan": { multiplier: 1.25 },
       "Microwave Oven": { multiplier: 1.25 },
       "Rice Cooker": { multiplier: 1 },
       "Water Heater": { multiplier: 1.25 },
@@ -149,6 +152,7 @@
         <td>${wireSize}</td>
         <td>${cbSize} A</td>
         <td>${groundWire}</td>
+        <td>${comment}</td>
         <td>THHN</td>
         <td>PVC</td>
       `;
@@ -186,6 +190,7 @@
 
 </body>
 </html>
+
 
 
 
