@@ -130,7 +130,7 @@
       const voltage = parseFloat(document.getElementById('voltage').value);
       const wattage = parseFloat(document.getElementById('wattage').value);
       const quantity = parseInt(document.getElementById('quantity').value);
-      const multiplier = parseInt(document.getElementById('multiplier').value);
+      const multiplier = parseFloat(document.getElementById('multiplier').value);
 
       const totalVA = wattage * quantity * multiplier;
       const current = parseFloat((totalVA / voltage).toFixed(2));
@@ -190,6 +190,7 @@
 
 </body>
 </html>
+
 
 
 
