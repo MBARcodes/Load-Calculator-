@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Electrical Load Planner</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, select, button { padding: 5px; margin: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+
+  <h2>Electrical Load Calculator (Philippines)</h2>
+
+  <form id="loadForm">
+    <label>Load Description:
+      <select id="loadDesc" required>
+        <option value="">-- Select Load --</option>
+        <option value="LED Bulb">LED Bulb</option>
+        <option value="Fluorescent Lamp">Fluorescent Lamp</option>
+        <option value="Refrigerator">Refrigerator</option>
+        <option value="Washing Machine">Washing Machine</option>
+        <option value="Electric Fan">Electric Fan</option>
+        <option value="Microwave Oven">Microwave Oven</option>
+        <option value="Rice Cooker">Rice Cooker</option>
+        <option value="Water Heater">Water Heater</option>
+        <option value="Rangehood">Rangehood</option>
+        <option value="Refrigerator">Refrigerator</option>
+        <option value="Washing Machine">Washing Machine</option>
+        <option value="Water Pump">Water Pump</option>
+        <option value="Air Conditioner less than 1HP">Air Conditioner less than 1 HP</option>
+        <option value="Air Conditioner 1HP">Air Conditioner (1 HP)</option>
+        <option value="Air Conditioner 1.5HP">Air Conditioner (1.5 HP)</option>
+        <option value="Air Conditioner 2HP">Air Conditioner (2 HP)</option>
+      </select>
+    </label>
+
+    <label>Voltage (V): <input type="number" id="voltage" value="230" required></label>
+    <label>Power (W): <input type="number" id="wattage" required></label>
+    <label>Quantity: <input type="number" id="quantity" value="1" required></label>
+    <label>Multiplier: <input type="number" id="multiplier" value="1" required></label>
+    <button type="submit">Add Load</button>
+  </form>
+
+  <button onclick="downloadToExcel()">Download to Excel</button>
+
+  <table id="loadTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Load Description</th>
+        <th>Voltage (V)</th>
+        <th>Power (W)</th>
+        <th>Quantity</th>
+        <th>Total VA</th>
+        <th>Current (A)</th>
+        <th>Wire Size</th>
+        <th>CB Size</th>
+        <th>Ground Wire</th>
+        <th>Conductor Type</th>
+        <th>Conduit</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // Default load values (Multiplier)
+    const loadDefaults = {
+      "LED Bulb": { multiplier: 1 },
+      "Fluorescent Lamp": { multiplier: 1 },
+      "Refrigerator": { multiplier: 1 },
+      "Washing Machine": { multiplier: 1 },
+      "Electric Fan": { multiplier: 1 },
+      "Microwave Oven": { multiplier: 1.25 },
+      "Rice Cooker": { multiplier: 1 },
+      "Water Heater": { multiplier: 1.25 },
+      "Rangehood": { multiplier: 1.25 },
+      "Refrigerator": { multiplier: 1.25 },
+      "Washing Machine": { multiplier: 1.5 },
+      "Water Pump": { multiplier: 2 },
+      "Air Conditioner less than 1HP": { multiplier: 1.5 },
+      "Air Conditioner 1HP": { wmultiplier: 1.75 },
+      "Air Conditioner 1.5HP": { multiplier: 1.75 },
+      "Air Conditioner 2HP": { wmultiplier: 2 },  
+    };
+
+    // Wire ampacity table
+    const wireAmpacity = {
+      "1.5 mm²": 15,
+      "2.0 mm²": 18,
+      "3.5 mm²": 30,
+      "5.5 mm²": 40,
+      "8.0 mm²": 50,
+      "14.0 mm²": 65,
+    };
+
+    // Ground wire size mapping
+    const groundSizes = {
+      "1.5 mm²": "1.5 mm²",
+      "2.0 mm²": "2.0 mm²",
+      "3.5 mm²": "2.0 mm²",
+      "5.5 mm²": "3.5 mm²",
+      "8.0 mm²": "5.5 mm²",
+      "14.0 mm²": "5.5 mm²",
+    };
+
+    let loadCount = 0;
+
+    // Auto-fill wattage & quantity when description is selected
+    document.getElementById("loadDesc").addEventListener("change", function () {
+      const selected = this.value;
+      if (loadDefaults[selected]) {
+        document.getElementById("multiplier").value = loadDefaults[selected].multiplier;
+      }
+    });
+
+    // Handle form submission
+    document.getElementById('loadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const desc = document.getElementById('loadDesc').value;
+      const voltage = parseFloat(document.getElementById('voltage').value);
+      const wattage = parseFloat(document.getElementById('wattage').value);
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const multiplier = parseInt(document.getElementById('multiplier').value);
+
+      const totalVA = wattage * quantity * multiplier;
+      const current = parseFloat((totalVA / voltage).toFixed(2));
+      const wireSize = getWireSize(current);
+      const cbSize = getCBSize(current);
+      const groundWire = groundSizes[wireSize] || "—";
+
+      const table = document.getElementById('loadTable').querySelector('tbody');
+      const row = table.insertRow();
+      loadCount++;
+      row.innerHTML = `
+        <td>${loadCount}</td>
+        <td>${desc}</td>
+        <td>${voltage}</td>
+        <td>${wattage}</td>
+        <td>${quantity}</td>
+        <td>${totalVA}</td>
+        <td>${current}</td>
+        <td>${wireSize}</td>
+        <td>${cbSize} A</td>
+        <td>${groundWire}</td>
+        <td>THHN</td>
+        <td>PVC</td>
+      `;
+
+      // Reset form (but keep default voltage at 230)
+      document.getElementById('loadForm').reset();
+      document.getElementById('voltage').value = 230;
+    });
+
+    // Wire size selection
+    function getWireSize(current) {
+      for (const [size, amp] of Object.entries(wireAmpacity)) {
+        if (current <= amp) return size;
+      }
+      return "Special";
+    }
+
+    // Circuit breaker size selection
+    function getCBSize(current) {
+      if (current <= 15) return 15;
+      else if (current <= 20) return 20;
+      else if (current <= 30) return 30;
+      else if (current <= 40) return 40;
+      else if (current <= 50) return 50;
+      else return 60;
+    }
+
+    // Export to Excel
+    function downloadToExcel() {
+      const table = document.getElementById('loadTable');
+      const wb = XLSX.utils.table_to_book(table, { sheet: "Electrical Loads" });
+      XLSX.writeFile(wb, "Electrical_Load_Schedule.xlsx");
+    }
+  </script>
+
+</body>
+</html>
