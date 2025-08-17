@@ -17,6 +17,7 @@
   <h2>Electrical Load Calculator (Philippines) — Fixed Multiplier</h2>
 
   <form id="loadForm" novalidate>
+    <label>CircuitNo: <input type="number" id="circuitno"required></label>
     <label>Load Description:
       <select id="loadDesc" required>
         <option value="">-- Select Load --</option>
@@ -35,7 +36,8 @@
         <option value="Air Conditioner 1HP">Air Conditioner (1 HP)</option>
         <option value="Air Conditioner 1.5HP">Air Conditioner (1.5 HP)</option>
         <option value="Air Conditioner 2HP">Air Conditioner (2 HP)</option>
-        <option value="Convenience Outlet">Convenience Outlet (2 HP)</option>
+        <option value="Convenience Outlet">Convenience Outlet</option>
+        <option value="Ckt Total">Ckt Total</option>
       </select>
     </label>
 
@@ -69,12 +71,14 @@
     <thead>
       <tr>
         <th>#</th>
+        <th>CircuitNo</th>
         <th>Load Description</th>
         <th>Voltage (V)</th>
         <th>Power (W)</th>
         <th>Quantity</th>
         <th>Total VA</th>
         <th>Current (A)</th>
+        <th>Current (A)Multiplier</th>
         <th>Wire Size</th>
         <th>CB Size</th>
         <th>Ground Wire</th>
@@ -85,7 +89,6 @@
     </thead>
     <tbody></tbody>
   </table>
-
   <script>
     const loadDefaults = {
       "LED Bulb": { multiplier: 1 },
@@ -104,17 +107,22 @@
       "Air Conditioner 1.5HP": { multiplier: 1.75 },
       "Air Conditioner 2HP": { multiplier: 2 },
       "Convenience Outlet": { multiplier: 1 },
+      "Ckt Total": { multiplier: 1 },
     };
 
     const wireAmpacity = {
-      "2.0 mm²": 15,
-      "3.5 mm²": 20,
-      "5.5 mm²": 30,
-      "8.0 mm²": 40,
-      "14.0 mm²": 50,
+      "2.0 mm²": 25,
+      "3.5 mm²": 30,
+      "5.5 mm²": 40,
+      "8.0 mm²": 55,
+      "14.0 mm²": 75,
+      "22.0 mm²": 95,
+      "30.0 mm²": 115,
+
     };
 
     const groundSizes = {
+      
       "2.0 mm²": "2.0 mm²",
       "3.5 mm²": "2.0 mm²",
       "5.5 mm²": "3.5 mm²",
@@ -133,7 +141,7 @@
 
     document.getElementById('loadForm').addEventListener('submit', function(e) {
       e.preventDefault();
-
+      const circuitNo = document.getElementById('circuitno').value;
       const desc = document.getElementById('loadDesc').value;
       const voltage = parseFloat(document.getElementById('voltage').value);
       const wattage = parseFloat(document.getElementById('wattage').value);
@@ -153,8 +161,9 @@
 
       const totalVA = wattage * quantity;
       const current = parseFloat((totalVA / voltage).toFixed(2));
-      const wireSize = getWireSize(current);
-      const cbSize = getCBSize(current*multiplier);
+      const currentmultiplier = parseFloat((current * multiplier).toFixed(2));
+      const wireSize = getWireSize(currentmultiplier);
+      const cbSize = getCBSize(current * multiplier);
       const groundWire = groundSizes[wireSize] || "—";
 
       const table = document.getElementById('loadTable').querySelector('tbody');
@@ -162,12 +171,14 @@
       loadCount++;
       row.innerHTML = `
         <td>${loadCount}</td>
+        <td>${circuitNo}</td>
         <td>${desc}</td>
         <td>${voltage}</td>
         <td>${wattage}</td>
         <td>${quantity}</td>
         <td>${totalVA}</td>
         <td>${current}</td>
+        <td>${currentmultiplier}</td>
         <td>${wireSize}</td>
         <td>${cbSize} A</td>
         <td>${groundWire}</td>
@@ -188,14 +199,19 @@
       return "Special";
     }
 
-    function getCBSize(current) {
-      if (current <= 15) return 15;
-      else if (current <= 20) return 20;
-      else if (current <= 30) return 30;
-      else if (current <= 40) return 40;
-      else if (current <= 50) return 50;
-      else return 60;
-    }
+    function getCBSize(currentmultiplier) {
+  if (currentmultiplier <= 25) return 15;
+  else if (currentmultiplier <= 30) return 20;
+  else if (currentmultiplier <= 40) return 30;
+  else if (currentmultiplier <= 55) return 40;
+  else if (currentmultiplier <= 75) return 60;
+  else if (currentmultiplier <= 95) return 80;
+  else if (currentmultiplier <= 115) return 100;
+  else if (currentmultiplier <= 130) return 125;
+  else if (currentmultiplier <= 150) return 150;
+  else return 170;
+}
+  
 
     function downloadToExcel() {
       const table = document.getElementById('loadTable');
@@ -215,7 +231,3 @@
   </script>
 </body>
 </html>
-
-
-
-
