@@ -164,7 +164,7 @@
       const currentmultiplier = parseFloat((current * multiplier).toFixed(2));
       const wireSize = getWireSize(currentmultiplier);
       const cbSize = getCBSize(current * multiplier);
-      const groundWire = groundSizes[wireSize] || "—";
+      const groundWire = wireSize;
 
       const table = document.getElementById('loadTable').querySelector('tbody');
       const row = table.insertRow();
@@ -231,3 +231,4 @@
   </script>
 </body>
 </html>
+
