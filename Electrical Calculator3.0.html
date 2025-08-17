@@ -154,7 +154,7 @@
       const totalVA = wattage * quantity;
       const current = parseFloat((totalVA / voltage).toFixed(2));
       const wireSize = getWireSize(current);
-      const cbSize = getCBSize(current * multiplier);
+      const cbSize = getCBSize(current*multiplier);
       const groundWire = groundSizes[wireSize] || "—";
 
       const table = document.getElementById('loadTable').querySelector('tbody');
@@ -215,4 +215,5 @@
   </script>
 </body>
 </html>
+
 
