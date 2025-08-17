@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Electrical Load Planner</title>
+  <meta charset="UTF-8" />
+  <title>Electrical Load Planner - Fixed Multiplier</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    input, select, button { padding: 5px; margin: 5px; }
+    input, select, button { padding: 6px; margin: 5px; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
+    label { display: inline-block; }
   </style>
 </head>
 <body>
+  <h2>Electrical Load Calculator (Philippines) — Fixed Multiplier</h2>
 
-  <h2>Electrical Load Calculator (Philippines)</h2>
-
-  <form id="loadForm">
+  <form id="loadForm" novalidate>
     <label>Load Description:
       <select id="loadDesc" required>
         <option value="">-- Select Load --</option>
@@ -30,10 +30,8 @@
         <option value="Rice Cooker">Rice Cooker</option>
         <option value="Water Heater">Water Heater</option>
         <option value="Rangehood">Rangehood</option>
-        <option value="Refrigerator">Refrigerator</option>
-        <option value="Washing Machine">Washing Machine</option>
         <option value="Water Pump">Water Pump</option>
-        <option value="Air Conditioner less than 1HP">Air Conditioner less than 1 HP</option>
+        <option value="Air Conditioner less than 1HP">Air Conditioner &lt; 1 HP</option>
         <option value="Air Conditioner 1HP">Air Conditioner (1 HP)</option>
         <option value="Air Conditioner 1.5HP">Air Conditioner (1.5 HP)</option>
         <option value="Air Conditioner 2HP">Air Conditioner (2 HP)</option>
@@ -43,8 +41,24 @@
     <label>Voltage (V): <input type="number" id="voltage" value="230" required></label>
     <label>Power (W): <input type="number" id="wattage" required></label>
     <label>Quantity: <input type="number" id="quantity" value="1" required></label>
-    <label>Multiplier: <input type="number" step="any" id="multiplier" required></label>
-    <label>Comment: <input type="text" id="comment" placeholder="Enter Comment"</label>
+
+    <!-- Multiplier: allow decimals, help mobile keyboards, placeholder -->
+    <label>Multiplier:
+      <input
+        type="number"
+        id="multiplier"
+        step="any"
+        inputmode="decimal"
+        placeholder="e.g. 1.25"
+        required
+      >
+    </label>
+
+    <!-- Free text comment -->
+    <label>Comment:
+      <input type="text" id="comment" placeholder="Enter comment (optional)">
+    </label>
+
     <button type="submit">Add Load</button>
   </form>
 
@@ -72,20 +86,17 @@
   </table>
 
   <script>
-    // Default load values (Multiplier)
     const loadDefaults = {
       "LED Bulb": { multiplier: 1 },
       "Fluorescent Lamp": { multiplier: 1 },
-      "Refrigerator": { multiplier: 1 },
-      "Washing Machine": { multiplier: 1 },
+      "Refrigerator": { multiplier: 1.25 },
+      "Washing Machine": { multiplier: 1.5 },
       "Electric Fan": { multiplier: 1 },
       "Exhaust Fan": { multiplier: 1.25 },
       "Microwave Oven": { multiplier: 1.25 },
       "Rice Cooker": { multiplier: 1 },
       "Water Heater": { multiplier: 1.25 },
       "Rangehood": { multiplier: 1.25 },
-      "Refrigerator": { multiplier: 1.25 },
-      "Washing Machine": { multiplier: 1.5 },
       "Water Pump": { multiplier: 2 },
       "Air Conditioner less than 1HP": { multiplier: 1.5 },
       "Air Conditioner 1HP": { multiplier: 1.75 },
@@ -93,7 +104,6 @@
       "Air Conditioner 2HP": { multiplier: 2 },
     };
 
-    // Wire ampacity table
     const wireAmpacity = {
       "1.5 mm²": 15,
       "2.0 mm²": 18,
@@ -103,7 +113,6 @@
       "14.0 mm²": 65,
     };
 
-    // Ground wire size mapping
     const groundSizes = {
       "1.5 mm²": "1.5 mm²",
       "2.0 mm²": "2.0 mm²",
@@ -115,7 +124,6 @@
 
     let loadCount = 0;
 
-    // Auto-fill wattage & quantity when description is selected
     document.getElementById("loadDesc").addEventListener("change", function () {
       const selected = this.value;
       if (loadDefaults[selected]) {
@@ -123,22 +131,31 @@
       }
     });
 
-    // Handle form submission
     document.getElementById('loadForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
       const desc = document.getElementById('loadDesc').value;
       const voltage = parseFloat(document.getElementById('voltage').value);
       const wattage = parseFloat(document.getElementById('wattage').value);
-      const quantity = parseInt(document.getElementById('quantity').value);
-      const multiplier = parseFloat(document.getElementById('multiplier').value);
+      const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+      // Sanitize multiplier: accept comma or dot, validate
+      let multRaw = document.getElementById('multiplier').value.trim();
+      multRaw = multRaw.replace(',', '.'); // allow comma decimal
+      const multiplier = multRaw === '' ? 1 : parseFloat(multRaw);
+
+      if (Number.isNaN(multiplier)) {
+        alert('Invalid multiplier — please enter a number like 1.25');
+        return;
+      }
+
+      const comment = document.getElementById('comment').value.trim() || '—';
 
       const totalVA = wattage * quantity * multiplier;
       const current = parseFloat((totalVA / voltage).toFixed(2));
       const wireSize = getWireSize(current);
       const cbSize = getCBSize(current);
       const groundWire = groundSizes[wireSize] || "—";
-      const comment = document.getElementById('comment').value || "—";
 
       const table = document.getElementById('loadTable').querySelector('tbody');
       const row = table.insertRow();
@@ -156,15 +173,14 @@
         <td>${groundWire}</td>
         <td>THHN</td>
         <td>PVC</td>
-        <td>${comment}</td>
+        <td>${escapeHtml(comment)}</td>
       `;
 
-      // Reset form (but keep default voltage at 230)
+      // Reset form but keep voltage
       document.getElementById('loadForm').reset();
       document.getElementById('voltage').value = 230;
     });
 
-    // Wire size selection
     function getWireSize(current) {
       for (const [size, amp] of Object.entries(wireAmpacity)) {
         if (current <= amp) return size;
@@ -172,7 +188,6 @@
       return "Special";
     }
 
-    // Circuit breaker size selection
     function getCBSize(current) {
       if (current <= 15) return 15;
       else if (current <= 20) return 20;
@@ -182,22 +197,21 @@
       else return 60;
     }
 
-    // Export to Excel
     function downloadToExcel() {
       const table = document.getElementById('loadTable');
       const wb = XLSX.utils.table_to_book(table, { sheet: "Electrical Loads" });
       XLSX.writeFile(wb, "Electrical_Load_Schedule.xlsx");
     }
-  </script>
 
+    // tiny helper to avoid injecting raw HTML in comment cell
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
