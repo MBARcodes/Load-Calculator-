@@ -43,7 +43,7 @@
 
     <label>Voltage (V): <input type="number" id="voltage" value="230" required></label>
     <label>Power (W): <input type="number" id="wattage" required></label>
-    <label>Quantity: <input type="number" id="quantity" value="1" required></label>
+    <label>Quantity: <input type="number" id="quantity" value="1" step="any" inputmode="decimal" required></label>
 
     <!-- Multiplier: allow decimals, help mobile keyboards, placeholder -->
     <label>Multiplier:
@@ -145,7 +145,7 @@
       const desc = document.getElementById('loadDesc').value;
       const voltage = parseFloat(document.getElementById('voltage').value);
       const wattage = parseFloat(document.getElementById('wattage').value);
-      const quantity = parseInt(document.getElementById('quantity').value, 10);
+      const quantity = parseFloat(document.getElementById('quantity').value);
 
       // Sanitize multiplier: accept comma or dot, validate
       let multRaw = document.getElementById('multiplier').value.trim();
@@ -231,4 +231,5 @@
   </script>
 </body>
 </html>
+
 
